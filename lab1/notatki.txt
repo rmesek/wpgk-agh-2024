@@ -1,0 +1,7 @@
+wrzucić zadanie do wtorku przed zajęciami
+1 nieobecność nieusprawiedliwiona, ale odesłać zadanie
+lab7 miniprojekt
+ocena jest tylko z zadań z labów
+liczy się terminowość
+
+Rozszerzenie: Live Server (VSCode)
