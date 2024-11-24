@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Lab 02.01 - Ambient and SpotLight</title>
+    <script type="text/javascript" src="three.js"></script>
+    <script type="text/javascript" src="jquery-1.9.0.js"></script>
+    <script type="text/javascript" src="stats.js"></script>
+    <script type="text/javascript" src="dat.gui.js"></script>
+    <script type="text/javascript" src="OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+
+    <script type="text/javascript">
+        var stats = initStats();
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(new THREE.Color(0x0c0c0c));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        var ctr = new THREE.OrbitControls(camera, renderer.domElement);
+
+        var planeGeometry = new THREE.PlaneGeometry(500, 500, 50, 50);
+        var planeMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, side: THREE.DoubleSide });
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+        plane.rotation.x = -0.5 * Math.PI;
+        scene.add(plane);
+
+        var cubeGeometry = new THREE.CubeGeometry(4, 4, 4);
+        var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000, specular: true, shininess: 100 });
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.castShadow = true;
+        cube.position.set(-4, 10, 0);
+        scene.add(cube);
+
+        var sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
+        var sphereMaterial = new THREE.MeshPhongMaterial({ color: 0x7777ff, specular: true, shininess: 50 });
+        var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.set(20, 0, 2);
+        sphere.castShadow = true;
+        scene.add(sphere);
+
+        var torusGeometry = new THREE.TorusGeometry(5, 1, 40, 40);
+        var torusMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00, specular: true, shininess: 100 });
+        var torus = new THREE.Mesh(torusGeometry, torusMaterial);
+        torus.position.set(10, 10, -10);
+        torus.castShadow = true;
+        scene.add(torus);
+
+        camera.position.set(-60, 20, 10);
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+
+        var ambientLight = new THREE.AmbientLight("#111111");
+        scene.add(ambientLight);
+
+        // Spotlight with a cone to represent the light beam
+        var spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-30, 20, 0);
+        spotLight.angle = 0.3;
+        spotLight.penumbra = 0.5;
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 2048;
+        spotLight.shadow.mapSize.height = 2048;
+        scene.add(spotLight);
+
+        // Set spotlight target
+        var spotlightTarget = new THREE.Object3D();
+        spotlightTarget.position.set(0, 0, 0);  // Set to desired target position
+        scene.add(spotlightTarget);
+        spotLight.target = spotlightTarget;
+
+        // Cone representing the spotlight beam
+        var coneGeometry = new THREE.ConeGeometry(15, 150, 48);
+        var coneMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00, opacity: 0.4, transparent: true });
+        var cone = new THREE.Mesh(coneGeometry, coneMaterial);
+        scene.add(cone);
+
+        // Colorful lights moving
+        var pointLight1 = new THREE.PointLight(0xff0040, 2, 50);
+        pointLight1.position.set(20, 10, 20);
+        scene.add(pointLight1);
+
+        var pointLight2 = new THREE.PointLight(0x0040ff, 2, 50);
+        pointLight2.position.set(-20, 10, -20);
+        scene.add(pointLight2);
+
+        var pointLight3 = new THREE.PointLight(0x80ff80, 2, 50);
+        pointLight3.position.set(0, 10, -30);
+        scene.add(pointLight3);
+
+        // Controls
+        var controls = new function () {
+            this.rotationSpeed = 0.02;
+            this.bouncingSpeed = 0.03;
+            this.ambientColor = "#111111";
+        };
+
+        var gui = new dat.GUI();
+        gui.addColor(controls, 'ambientColor').onChange(function (e) {
+            ambientLight.color = new THREE.Color(e);
+        });
+
+        var step = 0;
+        var direction = new THREE.Vector3();
+
+        render();
+
+        function render() {
+            stats.update();
+
+            // Animate cube rotation
+            cube.rotation.x += controls.rotationSpeed;
+            cube.rotation.y += controls.rotationSpeed;
+
+            // Bounce sphere
+            step += controls.bouncingSpeed;
+            sphere.position.x = 20 + (10 * Math.cos(step));
+            sphere.position.y = 2 + (10 * Math.abs(Math.sin(step)));
+
+            // Rotate torus
+            torus.rotation.x += controls.rotationSpeed;
+            torus.rotation.y += controls.rotationSpeed;
+
+            // Move spotlight in a circular path
+            var spotlightRadius = 30;
+            spotLight.position.x = spotlightRadius * Math.cos(step);
+            spotLight.position.z = spotlightRadius * Math.sin(step);
+
+            // Update cone to follow spotlight and align with spotlight direction
+            cone.position.copy(spotLight.position);
+            // Calculate the direction vector to the spotlight's target
+            direction.subVectors(spotLight.target.position, spotLight.position).normalize();
+            cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), direction);
+
+            // Animate colorful lights
+            pointLight1.position.x = 20 * Math.sin(step * 0.5);
+            pointLight1.position.z = 20 * Math.cos(step * 0.5);
+
+            pointLight2.position.x = -20 * Math.sin(step * 0.4);
+            pointLight2.position.z = 20 * Math.cos(step * 0.4);
+
+            pointLight3.position.x = 30 * Math.cos(step * 0.3);
+            pointLight3.position.z = -30 * Math.sin(step * 0.3);
+
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+
+        function initStats() {
+            var stats = new Stats();
+            stats.setMode(0);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+            $("#Stats-output").append(stats.domElement);
+            return stats;
+        }
+
+        $("#WebGL-output").append(renderer.domElement);
+    </script>
+</body>
+
+</html>
