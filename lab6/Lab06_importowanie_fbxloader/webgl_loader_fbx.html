@@ -24,7 +24,10 @@
 
       var clock = new THREE.Clock();
 
-      var mixer;
+      var mixer, fbxModel;
+      var angle = Math.PI;
+      var radius = 100;
+      var angleDelta = 0.1;
 
       init();
       animate();
@@ -47,10 +50,10 @@
         light = new THREE.DirectionalLight(0x88ffff, 0.3);
         light.position.set(0, 200, 100);
         light.castShadow = true;
-        light.shadow.camera.top = 180;
-        light.shadow.camera.bottom = -100;
-        light.shadow.camera.left = -120;
-        light.shadow.camera.right = 120;
+        light.shadow.camera.top = 360;
+        light.shadow.camera.bottom = -200;
+        light.shadow.camera.left = -240;
+        light.shadow.camera.right = 240;
         scene.add(light);
 
         // scene.add( new CameraHelper( light.shadow.camera ) );
@@ -84,6 +87,7 @@
             }
           });
 
+          fbxModel = object;
           scene.add(object);
         });
 
@@ -120,8 +124,16 @@
 
         if (mixer) mixer.update(delta);
 
-        renderer.render(scene, camera);
+        if (fbxModel) {
+          if (angle > 2 * Math.PI || angle < Math.PI) {
+            angleDelta *= -1;
+          }
+          angle += angleDelta * delta; // multiply by delta
+          fbxModel.position.set(radius * Math.cos(angle), fbxModel.position.y, radius * Math.sin(angle));
+          fbxModel.lookAt(0, -50, 0);
+        }
 
+        renderer.render(scene, camera);
         stats.update();
       }
     </script>
